@@ -1,51 +1,3 @@
-'''
-import cv2
-import os
-import csv
-import numpy as np
-import mediapipe as mp
-from matplotlib import pyplot as plt
-import time
-
-mp_drawing = mp.solutions.drawing_utils
-mp_holistic = mp.solutions.holistic
-
-def mediapipe_detection(frame, model):
-    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image.flags.writeable = False
-    results = model.process(image)
-    image.flags.writeable = True
-    image = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    return image, results
-
-def draw_landmarks(image, results):
-    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
-   # mp_drawing.draw_landmarks(image, results.face_landmarks, mp_holistic.FACE_CONNECTIONS)
-    mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-    mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-
-def record_landmarks(results, action):
-    try:
-        pose = results.pose_landmarks.landmark
-        pose_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in pose]).flatten())
-
-        right_hand = results.right_hand_landmarks.landmark
-        right_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in right_hand]).flatten())
-
-        left_hand = results.left_hand_landmarks.landmark
-        left_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in left_hand]).flatten())
- 
-        row = pose_row + right_hand_row + left_hand_row
-        row.insert(0, action)
-
-        with open('coords.csv', mode='a', newline='') as f:
-            csv_writer_obj = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer_obj.writerow(row)
-            
-    except:
-        pass
-'''
-
 primary_color = "#393646"
 secondary_color = "#F4EEE0"
 accent_color = "#4F4557"
@@ -53,9 +5,17 @@ underHover_color = "#8f8a7f"
 
 from tkinter import *
 from detection import start_detection
+from record import start_record, csv_file_name
+import pickle
+import threading
+from train import train
+
+
 root = Tk()
 root.geometry("500x400")
 root.configure(bg=primary_color)
+root.iconbitmap("favicon.ico")
+# root.resizable(width=False, height=False)
 
 padx1 = 10
 pady1 = 6
@@ -121,11 +81,12 @@ def home_page():
     heading = Label(homeTop_frame, text="SignSense", background=secondary_color, font=("Helvetica", "28"), foreground=secondary_color, bg=primary_color, padx=200)
     sub_heading = Label(homeTop_frame, text="Real-Time Sign Language Recognition", background=secondary_color, font=("Helvetica", "14"), padx=100, foreground=secondary_color, bg=primary_color)
     
-    button_frame = Frame(homeBottom_frame, bg=primary_color, padx=140)
-    detect_btn = Button(homeBottom_frame, text="Detect", command=detect_func,  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
-    
     skeleton = IntVar()
     skeleton_checkbox = Checkbutton(homeBottom_frame, onvalue=1, offvalue=0, text="Skeletal Mode", variable=skeleton, font=("Helvetica", "14"), fg="#4C6E83" ,bg=primary_color, activebackground=primary_color)
+    
+    button_frame = Frame(homeBottom_frame, bg=primary_color, padx=140)
+    invalid_dir_label = Label(homeBottom_frame, text="", background=secondary_color, font=("Helvetica", "12"), padx=100, foreground=secondary_color, bg=primary_color)
+    detect_btn = Button(homeBottom_frame, text="Detect", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
     
     
     heading.pack()
@@ -133,6 +94,7 @@ def home_page():
     detect_btn.pack()
     button_frame.pack()
     skeleton_checkbox.pack()
+    invalid_dir_label.pack()
     
     homeTop_frame.pack(side=TOP)
     homeTop_frame.pack_propagate(False)
@@ -159,13 +121,14 @@ def add_page():
     
     button_frame = Frame(addBottom_frame, bg=primary_color, padx=140)
     input_frame = Frame(addBottom_frame, bg=primary_color, padx=20)
-    add_btn = Button(addBottom_frame, text="New Sign", command=detect_func,  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
     
     skeleton = IntVar()
     #skeleton_checkbox = Checkbutton(addBottom_frame, onvalue=1, offvalue=0, text="Skeletal Mode", variable=skeleton, font=("Helvetica", "14"), fg="#4C6E83" ,bg=primary_color, activebackground=primary_color)
     action_input_field = Entry(input_frame, width=25, font=("Helvetica", "12"))
     name_text = Label(input_frame, text="Name: ", background=secondary_color, font=("Helvetica", "12"), padx=5, foreground=secondary_color, bg=primary_color)
 
+    loading_text = Label(addBottom_frame, text="", background=secondary_color, font=("Helvetica", "12"), padx=5, foreground=secondary_color, bg=primary_color)
+    add_btn = Button(addBottom_frame, text="New Sign", command=lambda:add_func(action_input_field.get(), action_input_field, loading_text),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
     
     # heading.pack()
     sub_heading.pack()
@@ -173,8 +136,9 @@ def add_page():
     name_text.grid(row=0, column=0)
     action_input_field.grid(row=0, column=1)
     input_frame.pack()
+    loading_text.pack()
     #input_frame.pack_propagate(False)
-    add_btn.pack(pady=20)
+    add_btn.pack()
     button_frame.pack()
     #skeleton_checkbox.pack()
     
@@ -247,11 +211,15 @@ main_frame.pack(side=RIGHT)
 main_frame.pack_propagate(False)
 main_frame.configure(height=400, width=500)
 
-def detect_func():
-    start_detection()
+def detect_func(skeleton_value, text_label):
+    if(not start_detection(skeleton_value.get())):
+        text_label.config(text="ERROR: Couldn't find trained model data")
 
-def add_func():
-    print("added")
+def add_func(action_name, input_field, loading_label):
+    threading.Thread(target=start_record(action_name)).start()
+    input_field.delete(0, END)
+    loading_label.config(text="Recording...")
+    threading.Thread(target=lambda: train(loading_label, csv_file_name)).start()
 
 
 show_indicate(home_indicate, home_page)

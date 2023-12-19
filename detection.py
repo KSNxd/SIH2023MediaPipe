@@ -7,12 +7,18 @@ from matplotlib import pyplot as plt
 import time
 import pandas as pd
 import pickle
+import pyttsx3
+from train import train
+import statistics
+from statistics import mode
 
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
 
-def test_print():
-    print("lol")
+engine = pyttsx3.init()
+
+def most_common(List):
+    return(mode(List))
 
 def mediapipe_detection(frame, model):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -28,86 +34,74 @@ def draw_landmarks(image, results):
     mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
     mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
 
-def record_landmarks(results, action):
+def start_detection(skeleton):
     try:
-        pose = results.pose_landmarks.landmark
-        pose_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in pose]).flatten())
-
-        right_hand = results.right_hand_landmarks.landmark
-        right_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in right_hand]).flatten())
-
-        left_hand = results.left_hand_landmarks.landmark
-        left_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in left_hand]).flatten())
- 
-        row = pose_row + right_hand_row + left_hand_row
-        row.insert(0, action)
-
-        with open('coords.csv', mode='a', newline='') as f:
-            csv_writer_obj = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer_obj.writerow(row)
-            
+        with open('body_languageTEST.pkl', 'rb') as f:
+            model = pickle.load(f)
     except:
-        pass
+        # print("No file or directory found..")
+        return 0
 
-
-def start_detection():
-
-    with open('body_language.pkl', 'rb') as f:
-        model = pickle.load(f)
-
+    predictions = []
+    threshold = 0.7
     cam = cv2.VideoCapture(0)
     with mp_holistic.Holistic(min_detection_confidence=0.8, min_tracking_confidence=0.5) as holistic:
         while cam.isOpened():
             ret, frame = cam.read()
         
             image, results = mediapipe_detection(frame, holistic)
-            draw_landmarks(image, results)
+
+            if(skeleton==1):
+                draw_landmarks(image, results)
             
             #print(results.right_hand_landmarks)
 
             try:
-                pose = results.pose_landmarks.landmark
-                pose_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in pose]).flatten())
-        
-                right_hand = results.right_hand_landmarks.landmark
-                right_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in right_hand]).flatten())
-        
-                left_hand = results.left_hand_landmarks.landmark
-                left_hand_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in left_hand]).flatten())
-        
-                row = pose_row + right_hand_row + left_hand_row
+
+                if results.pose_landmarks:
+                    pose_row = list(np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten())
+                else:
+                    pose_row = list(np.zeros(132).flatten())
+                
+                if results.left_hand_landmarks:
+                    lh_row = list(np.array([[res.x, res.y, res.z, res.visibility] for res in results.left_hand_landmarks.landmark]).flatten())
+                else:
+                    lh_row = list(np.zeros(84).flatten())
+                
+                if results.right_hand_landmarks:
+                    rh_row = list(np.array([[res.x, res.y, res.z, res.visibility] for res in results.right_hand_landmarks.landmark]).flatten())
+                else:
+                    rh_row = list(np.zeros(84).flatten())
+                
+                row = pose_row + rh_row + lh_row
                 
                 X = pd.DataFrame([row])
                 body_language_class = model.predict(X)[0]
                 body_language_prob = model.predict_proba(X)[0]
-                print(body_language_class, body_language_prob)
 
-                '''   coords = tuple(np.multiply(
-                                np.array(
-                                    (results.pose_landmarks.landmark[mp_holistic.PoseLandmark.LEFT_EAR].x, 
-                                    results.pose_landmarks.landmark[mp_holistic.PoseLandmark.LEFT_EAR].y))
-                            , [640,480]).astype(int))
-                
-                cv2.rectangle(image, 
-                            (coords[0], coords[1]+5), 
-                            (coords[0]+len(body_language_class)*20, coords[1]-30), 
-                            (245, 117, 16), -1)
-                cv2.putText(image, body_language_class, coords, 
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)'''
-                
+                predictions.append(body_language_class.split(' ')[0])
+                if (len(predictions) > 30):
+                    print("hello")
+                    predictions = predictions[-8:]
+                print(predictions)
+                major_prediction = most_common(predictions)
+                # print(body_language_class, body_language_prob)
+
                 # Get status box
-                cv2.rectangle(image, (0,0), (640, 35), (0,0,0, 0.5), -1)
+                if (round(body_language_prob[np.argmax(body_language_prob)],2) > threshold):
+        
+                    cv2.rectangle(image, (0,0), (640, 35), (0,0,0, 0.5), -1)
 
-                cv2.putText(image, 'Action:'
-                            , (10,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(image, body_language_class.split(' ')[0]
-                            , (110,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
-                
-                # Display Probability
-                cv2.putText(image, 'Accuracy:'
-                            , (420,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.putText(image, str(round(body_language_prob[np.argmax(body_language_prob)],2))
-                            , (560,25), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(image, 'Action:'
+                                , (10,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(image, body_language_class.split(' ')[0]
+                                , (110,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
+                    
+                    # Display Probability
+                    cv2.putText(image, 'Accuracy:'
+                                , (420,25), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(image, str(round(body_language_prob[np.argmax(body_language_prob)],2))
+                                , (560,25), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1, cv2.LINE_AA)
             except:
                 pass
 
@@ -119,3 +113,7 @@ def start_detection():
 
     cam.release()
     cv2.destroyAllWindows()
+    return 1
+
+
+engine.runAndWait()
