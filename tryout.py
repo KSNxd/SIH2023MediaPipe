@@ -10,7 +10,6 @@ import pickle
 import pyttsx3
 from train import train
 import statistics
-import threading
 from statistics import mode
 
 mp_drawing = mp.solutions.drawing_utils
@@ -37,15 +36,14 @@ def draw_landmarks(image, results):
 
 def start_detection(skeleton):
     try:
-        with open('body_languageTEST.pkl', 'rb') as f:
+        with open('FiveLearn.pkl', 'rb') as f:
             model = pickle.load(f)
     except:
         # print("No file or directory found..")
         return 0
 
     predictions = []
-    temp_predictions = ""
-    threshold = 0.4
+    threshold = 0.7
     cam = cv2.VideoCapture(0)
     with mp_holistic.Holistic(min_detection_confidence=0.8, min_tracking_confidence=0.5) as holistic:
         while cam.isOpened():
@@ -86,15 +84,7 @@ def start_detection(skeleton):
                     print("hello")
                     predictions = predictions[-8:]
                 print(predictions)
-
-                
                 major_prediction = most_common(predictions)
-                
-                if(not(temp_predictions==major_prediction)):
-                    engine.say(body_language_class.split(' ')[0])
-                    threading.Thread(target=engine.runAndWait).start()
-                    temp_predictions = major_prediction
-                    
                 # print(body_language_class, body_language_prob)
 
                 # Get status box
@@ -126,3 +116,4 @@ def start_detection(skeleton):
     return 1
 
 
+engine.runAndWait()

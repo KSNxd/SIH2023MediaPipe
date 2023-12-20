@@ -9,6 +9,7 @@ from record import start_record, csv_file_name
 import pickle
 import threading
 from train import train
+from PIL import ImageTk, Image
 
 
 root = Tk()
@@ -27,10 +28,13 @@ def hide_indicate():
     add_indicate.config(bg=accent_color)
     about_indicate.config(bg=accent_color)
     contact_indicate.config(bg=accent_color)
+    learn_indicate.config(bg=accent_color)
+    detect_indicate.config(bg=accent_color)
 
 def delete_pages():
     for frame in main_frame.winfo_children():
         frame.destroy()
+
 
 def show_indicate(lb, page):
     hide_indicate()
@@ -43,23 +47,35 @@ home_btn.place(x=10, y=50)
 home_indicate = Label(options_frame, text=" ", background=accent_color)
 home_indicate.place(x=3, y=50, width=5, height=40)
 
+learn_btn = Button(options_frame, text="Learn", font=("Helvetica", "16"), fg=secondary_color, bd=0, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, command=lambda: show_indicate(learn_indicate, learn_page))
+learn_btn.place(x=10, y=100)
+
+learn_indicate = Label(options_frame, text=" ", background=accent_color)
+learn_indicate.place(x=3, y=100, width=5, height=40)
+
 add_btn = Button(options_frame, text="Add Sign", font=("Helvetica", "16"), fg=secondary_color, bd=0, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, command=lambda: show_indicate(add_indicate, add_page))
-add_btn.place(x=10, y=100)
+add_btn.place(x=10, y=150)
 
 add_indicate = Label(options_frame, text=" ", background=accent_color)
-add_indicate.place(x=3, y=100, width=5, height=40)
+add_indicate.place(x=3, y=150, width=5, height=40)
+
+detect_btn = Button(options_frame, text="Detect", font=("Helvetica", "16"), fg=secondary_color, bd=0, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, command=lambda: show_indicate(detect_indicate, detect_page))
+detect_btn.place(x=10, y=200)
+
+detect_indicate = Label(options_frame, text=" ", background=accent_color)
+detect_indicate.place(x=3, y=200, width=5, height=40)
 
 about_btn = Button(options_frame, text="About", font=("Helvetica", "16"), fg=secondary_color, bd=0, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, command=lambda: show_indicate(about_indicate, about_page))
-about_btn.place(x=10, y=150)
+about_btn.place(x=10, y=250)
 
 about_indicate = Label(options_frame, text=" ", background=accent_color)
-about_indicate.place(x=3, y=150, width=5, height=40)
+about_indicate.place(x=3, y=250, width=5, height=40)
 
 contact_btn = Button(options_frame, text="Contact", font=("Helvetica", "16"), fg=secondary_color, bd=0, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, command=lambda: show_indicate(contact_indicate, contact_page))
-contact_btn.place(x=10, y=200)
+contact_btn.place(x=10, y=300)
 
 contact_indicate = Label(options_frame, text=" ", background=accent_color)
-contact_indicate.place(x=3, y=200, width=5, height=40)
+contact_indicate.place(x=3, y=300, width=5, height=40)
 
 
 options_frame.pack(side=LEFT)
@@ -71,42 +87,250 @@ options_frame.configure(height=400, width=125)
 ##################################     MAIN         #######################
 main_frame = Frame(root, bg=primary_color)
 
+def switch_learn_pages(page):
+    for frame in main_frame.winfo_children():
+        frame.destroy()
+    page()
 
-def home_page():
-    home_frame = Frame(main_frame)
+def learn1_page():
+    
+    learn1_frame = Frame(main_frame)
+    
+    img = Image.open("Assets/Sign6.png")
+    #resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(img)
 
-    homeTop_frame = Frame(home_frame, bg=primary_color)
-    homeBottom_frame = Frame(home_frame, bg=primary_color)
+    heading = Label(learn1_frame, text="Drinking", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    img_frame = Frame(learn1_frame, bg=primary_color, padx=15, pady=4)
+    desc_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    desc_img_label.image = img_obj
+    desc = Label(learn1_frame, text="Make a C shape with your hand and\ntip it towards your mouth", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=6, foreground=secondary_color, bg=primary_color)
     
-    heading = Label(homeTop_frame, text="SignSense", background=secondary_color, font=("Helvetica", "28"), foreground=secondary_color, bg=primary_color, padx=200)
-    sub_heading = Label(homeTop_frame, text="Real-Time Sign Language Recognition", background=secondary_color, font=("Helvetica", "14"), padx=100, foreground=secondary_color, bg=primary_color)
+    tryout_btn_frame = Frame(learn1_frame, bg=primary_color, padx=120)
+    tryout_btn = Button(tryout_btn_frame, text="Try Yourself!", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=5, pady=4)
     
-    skeleton = IntVar()
-    skeleton_checkbox = Checkbutton(homeBottom_frame, onvalue=1, offvalue=0, text="Skeletal Mode", variable=skeleton, font=("Helvetica", "14"), fg="#4C6E83" ,bg=primary_color, activebackground=primary_color)
-    
-    button_frame = Frame(homeBottom_frame, bg=primary_color, padx=140)
-    invalid_dir_label = Label(homeBottom_frame, text="", background=secondary_color, font=("Helvetica", "12"), padx=100, foreground=secondary_color, bg=primary_color)
-    detect_btn = Button(homeBottom_frame, text="Detect", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
+    navigator = Frame(learn1_frame, bg=primary_color, padx=170)
+    next_btn_frame = Frame(navigator, bg=primary_color)
+    next_btn = Button(next_btn_frame, text=">>", command=lambda: switch_learn_pages(learn2_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
     
     
     heading.pack()
-    sub_heading.pack()
-    detect_btn.pack()
-    button_frame.pack()
-    skeleton_checkbox.pack()
-    invalid_dir_label.pack()
+    desc_img_label.pack(padx=45)
+    img_frame.pack()
+    desc.pack()
+    tryout_btn_frame.pack()
+    tryout_btn.pack()
+    next_btn_frame.grid(row=0, column=1)
+    next_btn.pack(padx=5, pady=5)
+    navigator.pack()
     
-    homeTop_frame.pack(side=TOP)
-    homeTop_frame.pack_propagate(False)
-    homeTop_frame.configure(height=250, width=500)
+    learn1_frame.pack(pady=10)
 
-    homeBottom_frame.pack(side=BOTTOM)
-    homeBottom_frame.pack_propagate(False)
-    homeBottom_frame.configure(height=200, width=500)
+def learn2_page():
+     
+    learn2_frame = Frame(main_frame)
+    
+    img = Image.open("Assets/Sign2.png")
+    #resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(img)
+
+    heading = Label(learn2_frame, text="Play", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    img_frame = Frame(learn2_frame, bg=primary_color, padx=15, pady=4)
+    desc_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    desc_img_label.image = img_obj
+    desc = Label(learn2_frame, text="Wingle your fingers in front of you", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=17, foreground=secondary_color, bg=primary_color)
+    
+    tryout_btn_frame = Frame(learn2_frame, bg=primary_color, padx=120)
+    tryout_btn = Button(tryout_btn_frame, text="Try Yourself!", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=5, pady=4)
+    
+    navigator = Frame(learn2_frame, bg=primary_color, padx=146)
+    next_btn_frame = Frame(navigator, bg=primary_color)
+    next_btn = Button(next_btn_frame, text=">>", command=lambda: switch_learn_pages(learn3_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    prev_btn_frame = Frame(navigator, bg=primary_color)
+    prev_btn = Button(prev_btn_frame, text="<<", command=lambda: switch_learn_pages(learn1_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    
+    heading.pack()
+    desc_img_label.pack(padx=45)
+    img_frame.pack()
+    desc.pack()
+    tryout_btn_frame.pack()
+    tryout_btn.pack()
+    prev_btn_frame.grid(row=0, column=0)
+    prev_btn.pack(padx=5, pady=5)
+    next_btn_frame.grid(row=0, column=1)
+    next_btn.pack(padx=5, pady=5)
+    navigator.pack()
+    
+    learn2_frame.pack(pady=10)
+
+def learn3_page():
+     
+    learn3_frame = Frame(main_frame)
+    
+    img = Image.open("Assets/Sign3.png")
+    #resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(img)
+
+    heading = Label(learn3_frame, text="Finish", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    img_frame = Frame(learn3_frame, bg=primary_color, padx=15, pady=4)
+    desc_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    desc_img_label.image = img_obj
+    desc = Label(learn3_frame, text="Open both hands and flip over", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=17, foreground=secondary_color, bg=primary_color)
+    
+    tryout_btn_frame = Frame(learn3_frame, bg=primary_color, padx=120)
+    tryout_btn = Button(tryout_btn_frame, text="Try Yourself!", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=5, pady=4)
+    
+    navigator = Frame(learn3_frame, bg=primary_color, padx=146)
+    next_btn_frame = Frame(navigator, bg=primary_color)
+    next_btn = Button(next_btn_frame, text=">>", command=lambda: switch_learn_pages(learn4_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    prev_btn_frame = Frame(navigator, bg=primary_color)
+    prev_btn = Button(prev_btn_frame, text="<<", command=lambda: switch_learn_pages(learn2_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    
+    heading.pack()
+    desc_img_label.pack(padx=45)
+    img_frame.pack()
+    desc.pack()
+    tryout_btn_frame.pack()
+    tryout_btn.pack()
+    prev_btn_frame.grid(row=0, column=0)
+    prev_btn.pack(padx=5, pady=5)
+    next_btn_frame.grid(row=0, column=1)
+    next_btn.pack(padx=5, pady=5)
+    navigator.pack()
+    
+    learn3_frame.pack(pady=10)
+
+def learn4_page():
+     
+    learn4_frame = Frame(main_frame)
+    
+    img = Image.open("Assets/Sign4.png")
+    #resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(img)
+
+    heading = Label(learn4_frame, text="Sorry", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    img_frame = Frame(learn4_frame, bg=primary_color, padx=15, pady=4)
+    desc_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    desc_img_label.image = img_obj
+    desc = Label(learn4_frame, text="Close your wrist and rotate\nyour hand around your chest", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=6, foreground=secondary_color, bg=primary_color)
+    
+    tryout_btn_frame = Frame(learn4_frame, bg=primary_color, padx=120)
+    tryout_btn = Button(tryout_btn_frame, text="Try Yourself!", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=5, pady=4)
+    
+    navigator = Frame(learn4_frame, bg=primary_color, padx=146)
+    next_btn_frame = Frame(navigator, bg=primary_color)
+    next_btn = Button(next_btn_frame, text=">>", command=lambda: switch_learn_pages(learn5_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    prev_btn_frame = Frame(navigator, bg=primary_color)
+    prev_btn = Button(prev_btn_frame, text="<<", command=lambda: switch_learn_pages(learn3_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    
+    heading.pack()
+    desc_img_label.pack(padx=45)
+    img_frame.pack()
+    desc.pack()
+    tryout_btn_frame.pack()
+    tryout_btn.pack()
+    prev_btn_frame.grid(row=0, column=0)
+    prev_btn.pack(padx=5, pady=5)
+    next_btn_frame.grid(row=0, column=1)
+    next_btn.pack(padx=5, pady=5)
+    navigator.pack()
+    
+    learn4_frame.pack(pady=10)
+
+
+def learn5_page():
+     
+    learn5_frame = Frame(main_frame)
+    
+    img = Image.open("Assets/Sign5.png")
+    #resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(img)
+
+    heading = Label(learn5_frame, text="Blue", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    img_frame = Frame(learn5_frame, bg=primary_color, padx=15, pady=4)
+    desc_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    desc_img_label.image = img_obj
+    desc = Label(learn5_frame, text="Fold your thumb finger and \n open four fingers", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=6, foreground=secondary_color, bg=primary_color)
+    
+    tryout_btn_frame = Frame(learn5_frame, bg=primary_color, padx=120)
+    tryout_btn = Button(tryout_btn_frame, text="Try Yourself!", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=5, pady=4)
+    
+    navigator = Frame(learn5_frame, bg=primary_color, padx=170)
+    prev_btn_frame = Frame(navigator, bg=primary_color)
+    prev_btn = Button(prev_btn_frame, text="<<", command=lambda: switch_learn_pages(learn4_page),  font=("Helvetica", "12"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color)
+    
+    
+    heading.pack()
+    desc_img_label.pack(padx=45)
+    img_frame.pack()
+    desc.pack()
+    tryout_btn_frame.pack()
+    tryout_btn.pack()
+    prev_btn_frame.grid(row=0, column=1)
+    prev_btn.pack(padx=5, pady=5)
+    navigator.pack()
+    
+    learn5_frame.pack(pady=10)
+   
+def home_page():
+    home_frame = Frame(main_frame)
+
+    
+    heading = Label(home_frame, text="SignSense", background=secondary_color, font=("Helvetica", "28"), foreground=secondary_color, bg=primary_color, padx=200)
+    sub_heading = Label(home_frame, text="Real-Time Sign Language Recognition", background=secondary_color, font=("Helvetica", "14"), padx=100, foreground=secondary_color, bg=primary_color)
+    
+    img = Image.open("Assets/favicon.png")
+    resized_img = img.resize((200, 200), Image.ANTIALIAS)
+    img_obj = ImageTk.PhotoImage(resized_img)
+    img_frame = Frame(home_frame, bg=primary_color, padx=88, pady=30)
+    logo_img_label = Label(img_frame, image=img_obj, bg=primary_color)
+    logo_img_label.image = img_obj
+
+    heading.pack()
+    sub_heading.pack()
+    logo_img_label.pack()
+    img_frame.pack()
+
 
     home_frame.pack(pady=20)
 
+def learn_page():
+    learn_home_frame = Frame(main_frame)
+    
+    heading = Label(learn_home_frame, text="Learn", background=secondary_color, font=("Helvetica", "28"), foreground=secondary_color, bg=primary_color, padx=200)
+    sub_heading = Label(learn_home_frame, text="Real-Time Sign Language Recognition", background=secondary_color, font=("Helvetica", "14"), padx=100, pady=8, foreground=secondary_color, bg=primary_color)
 
+    lesson1_frame = Frame(learn_home_frame, bg=primary_color, padx=50)
+    lesson1_btn = Button(lesson1_frame, text="Lesson 1 : Drink", command=lambda: switch_learn_pages(learn1_page),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=55, pady=2)
+    
+    lesson2_frame = Frame(learn_home_frame, bg=primary_color, padx=50)
+    lesson2_btn = Button(lesson2_frame, text="Lesson 2 : Play", command=lambda: switch_learn_pages(learn2_page),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=60, pady=2)
+    
+    lesson3_frame = Frame(learn_home_frame, bg=primary_color, padx=50)
+    lesson3_btn = Button(lesson3_frame, text="Lesson 3 : Finish", command=lambda: switch_learn_pages(learn3_page),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=55, pady=2)
+
+    lesson4_frame = Frame(learn_home_frame, bg=primary_color, padx=50)
+    lesson4_btn = Button(lesson4_frame, text="Lesson 4 : Sorry", command=lambda: switch_learn_pages(learn4_page),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=55, pady=2)
+
+    lesson5_frame = Frame(learn_home_frame, bg=primary_color, padx=50)
+    lesson5_btn = Button(lesson5_frame, text="Lesson 5 : Blue", command=lambda: switch_learn_pages(learn5_page),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=60, pady=2)
+
+
+    heading.pack()
+    sub_heading.pack()
+
+    lesson1_btn.pack(pady=5)
+    lesson1_frame.pack()
+    lesson2_btn.pack(pady=5)
+    lesson2_frame.pack()
+    lesson3_btn.pack(pady=5)
+    lesson3_frame.pack()
+    lesson4_btn.pack(pady=5)
+    lesson4_frame.pack()
+    lesson5_btn.pack(pady=5)
+    lesson5_frame.pack()
+
+    learn_home_frame.pack(pady=20)
 
 def add_page():
     add_frame = Frame(main_frame)
@@ -152,6 +376,39 @@ def add_page():
 
     add_frame.pack(pady=20)
 
+def detect_page():
+    home_frame = Frame(main_frame)
+
+    homeTop_frame = Frame(home_frame, bg=primary_color)
+    homeBottom_frame = Frame(home_frame, bg=primary_color)
+    
+    heading = Label(homeTop_frame, text="Detect Signs", background=secondary_color, font=("Helvetica", "22"), foreground=secondary_color, bg=primary_color, padx=200)
+    sub_heading = Label(homeTop_frame, text="Detect all signs recorded and test yourself", background=secondary_color, font=("Helvetica", "14"), padx=100,pady=15 ,foreground=secondary_color, bg=primary_color)
+    
+    skeleton = IntVar()
+    skeleton_checkbox = Checkbutton(homeBottom_frame, onvalue=1, offvalue=0, text="Skeletal Mode", variable=skeleton, font=("Helvetica", "14"), fg="#4C6E83" ,bg=primary_color, activebackground=primary_color)
+    
+    button_frame = Frame(homeBottom_frame, bg=primary_color, padx=140)
+    invalid_dir_label = Label(homeBottom_frame, text="", background=secondary_color, font=("Helvetica", "12"), padx=100, foreground=secondary_color, bg=primary_color)
+    detect_btn = Button(homeBottom_frame, text="Detect", command=lambda: detect_func(skeleton, invalid_dir_label),  font=("Helvetica", "16"), fg=secondary_color, bg=accent_color, activeforeground=underHover_color, activebackground=accent_color, padx=15, pady=4)
+    
+    
+    heading.pack()
+    sub_heading.pack()
+    detect_btn.pack()
+    button_frame.pack()
+    skeleton_checkbox.pack()
+    invalid_dir_label.pack()
+    
+    homeTop_frame.pack(side=TOP)
+    homeTop_frame.pack_propagate(False)
+    homeTop_frame.configure(height=250, width=500)
+
+    homeBottom_frame.pack(side=BOTTOM)
+    homeBottom_frame.pack_propagate(False)
+    homeBottom_frame.configure(height=200, width=500)
+
+    home_frame.pack(pady=20)
 
 def about_page():
     about_frame = Frame(main_frame)
